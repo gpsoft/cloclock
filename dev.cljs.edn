@@ -1,0 +1,6 @@
+^{:watch-dirs ["src"]
+  :css-dirs ["resources/public/css"]
+  :open-url false
+  }
+{:main cloclock.core
+ :output-to "resources/public/js/app.js"}
