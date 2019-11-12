@@ -10,16 +10,63 @@ body {
 	background-color: #336699;
 }
 
-.analog-time-section {
+.content {
+	width: 600px;
+}
+
+.title {
+	font-size: 18px;
+	font-weight: bold;
+	margin-bottom: 16px;
+}
+
+.display {
 	position: relative;
+	background-color: #4081C2;
+	margin-bottom: 8px;
+}
+
+.date-section {
+	width: 300px;
+	height: 100px;
+	padding-top: 56px;
+	padding-left: 8px;
+	font-family: serif;
+	font-weight: bold;
+	font-size: 28px;
+}
+
+.digital-time-section {
+	width: 300px;
+	height: 200px;
+	font-size: 120px;
+}
+
+.analog-time-section {
+	position: absolute;
+	top: 20px;
+	right: 10px;
 	display: flex;
 	justify-content: center;
-	width: 300px;
-	height: 300px;
+	width: 260px;
+	height: 260px;
 	background: url('../img/face.png') no-repeat 50% 50% / contain;
 }
 
 .hand {
-	height: 300px;
+	height: 260px;
 	position: absolute;
 }
+
+.controls {
+	padding: 4px;
+}
+
+.controls .check-label {
+	font-size: 19px;
+}
+
+.controls .check-label input[type=checkbox] {
+	vertical-align: middle;
+}
+

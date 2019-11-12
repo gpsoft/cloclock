@@ -2,13 +2,14 @@
   (:require [reagent.core :as reagent]
             [re-frame.core :as rf]))
 
+;; Generate tick events
 (defn tick
   []
   (let [now (js/Date.)]
     (rf/dispatch [:time-change now])))
-
 (defonce ticker (js/setInterval tick 200))
 
+;; re-frame Events
 (rf/reg-event-db
   :initialize
   (fn [_ _]
@@ -31,6 +32,7 @@
   (fn [db [_ new-stop2go?]]
     (assoc-in db [:options :stop2go?] new-stop2go?)))
 
+;; re-frame subscriptions
 (rf/reg-sub
   :time
   (fn [db _] (:time db)))
@@ -47,6 +49,8 @@
   :stop2go?
   (fn [db _] (get-in db [:options :stop2go?])))
 
+
+;; Utils
 (defn date-str
   [dt with-era?]
   (let [locale (if with-era? "ja-JP-u-ca-japanese" "ja-JP")
@@ -56,24 +60,6 @@
                     :weekday "short"}
                    (when with-era? [:era "long"]))]
     (.toLocaleDateString dt locale (clj->js opts))))
-
-(defn date
-  []
-  [:div.date-section
-   (let [dt @(rf/subscribe [:time])
-         with-era? @(rf/subscribe [:with-era?])]
-   (date-str dt with-era?))])
-
-(defn digital-time
-  []
-  [:div.digital-time-section
-   (let [dt @(rf/subscribe [:time])]
-     (.toLocaleTimeString dt "ja-JP"))])
-
-(defn hand
-  [src rot]
-  [:img.hand {:src src
-              :style {:transform (str "rotate(" rot "deg)")}}])
 
 (defn ratio->deg
   [rat]
@@ -96,15 +82,42 @@
      (ratio->deg mr)
      (ratio->deg sr)]))
 
+(defn stop?
+  [s ms]
+  (or (and (zero? s) (< ms 500))
+      (>= s 58)))
+
 (defn hands-deg-stop2go
   [dt]
   (let [[h m s ms] (hms dt)
-        sr (if (< s 58) (+ (/ s 58) (/ ms 1000 60)) 0)
+        sr (if (stop? s ms) 0 (+ (/ s 58) (/ ms 1000 60)))
         mr (/ m 60)
         hr (+ (/ (mod h 12) 12) (/ mr 12))]
     [(ratio->deg hr)
      (ratio->deg mr)
      (ratio->deg sr)]))
+
+
+;; re-frame views
+(defn date
+  []
+  [:div.date-section
+   (let [dt @(rf/subscribe [:time])
+         with-era? @(rf/subscribe [:with-era?])]
+   (date-str dt with-era?))])
+
+(defn digital-time
+  []
+  [:div.digital-time-section
+   (let [dt @(rf/subscribe [:time])
+         opts #js {:hour "numeric"
+                   :minute "numeric"}]
+     (.toLocaleTimeString dt "ja-JP" opts))])
+
+(defn hand
+  [src rot]
+  [:img.hand {:src src
+              :style {:transform (str "rotate(" rot "deg)")}}])
 
 (defn analog-time
   []
@@ -120,14 +133,14 @@
   []
   (let [{:keys [with-era? stop2go?]} @(rf/subscribe [:options])]
     [:div.controls
-     [:label.check.with-era
+     [:label.check-label.with-era
       [:input {:type "checkbox"
                :value with-era?
                :on-change #(rf/dispatch
                              [:era-check-change (not with-era?)])}
        ]
       "和暦で表示"]
-     [:label.check.stop2go
+     [:label.check-label.stop2go
       [:input {:type "checkbox"
                :value stop2go?
                :on-change #(rf/dispatch
@@ -137,18 +150,22 @@
 
 (defn ui
   []
-  [:div
+  [:div.content
    [:div.title "Web Clock in ClojureScript"]
-   [#'date]
-   [#'digital-time]
-   [#'analog-time]
+   [:div.display
+    [#'date]
+    [#'digital-time]
+    [#'analog-time]]
    [#'controls]
    ])
 
+
+;; app
 (defn render
   []
   (reagent/render [ui]
                   (.getElementById js/document "app")))
+
 (defn ^:export run
   []
   (rf/dispatch-sync [:initialize])
