@@ -10,17 +10,21 @@
 (defonce ticker (js/setInterval tick 200))
 
 ;; re-frame Events
+(declare day-part)
 (rf/reg-event-db
   :initialize
   (fn [_ _]
-    {:time (js/Date.)
-     :options {:with-era? false
-               :stop2go? false}}))
+    (let [now (js/Date.)]
+      {:time now
+       :day-part (day-part now)
+       :options {:with-era? true
+                 :stop2go? true
+                 :background? true}})))
 
 (rf/reg-event-db
   :time-change
   (fn [db [_ new-time]]
-    (assoc db :time new-time)))
+    (assoc db :time new-time :day-part (day-part new-time))))
 
 (rf/reg-event-db
   :era-check-change
@@ -32,10 +36,19 @@
   (fn [db [_ new-stop2go?]]
     (assoc-in db [:options :stop2go?] new-stop2go?)))
 
+(rf/reg-event-db
+  :bg-check-change
+  (fn [db [_ new-bg?]]
+    (assoc-in db [:options :background?] new-bg?)))
+
 ;; re-frame subscriptions
 (rf/reg-sub
   :time
   (fn [db _] (:time db)))
+
+(rf/reg-sub
+  :day-part
+  (fn [db _] (:day-part db)))
 
 (rf/reg-sub
   :options
@@ -49,8 +62,21 @@
   :stop2go?
   (fn [db _] (get-in db [:options :stop2go?])))
 
+(rf/reg-sub
+  :background?
+  (fn [db _] (get-in db [:options :background?])))
+
 
 ;; Utils
+(defn day-part
+  [dt]
+  (let [between (fn [[begin end] v] (and (>= v begin) (< v end)))]
+    (condp between (.getHours dt)
+      [5 8] :morning
+      [8 16] :daytime
+      [16 20] :evening
+      :night)))
+
 (defn date-str
   [dt with-era?]
   (let [locale (if with-era? "ja-JP-u-ca-japanese" "ja-JP")
@@ -97,6 +123,17 @@
      (ratio->deg mr)
      (ratio->deg sr)]))
 
+(defn image-url
+  [part]
+  (let [kws (case part
+              :morning "morning,sunrise,dawn"
+              :daytime "daytime,afternoon"
+              :evening "evening,sunset,dusk"
+              "midnight,sky,star/all")]
+    (str "url('https://loremflickr.com/600/400/"
+         kws
+         "')")) )
+
 
 ;; re-frame views
 (defn date
@@ -110,8 +147,8 @@
   []
   [:div.digital-time-section
    (let [dt @(rf/subscribe [:time])
-         opts #js {:hour "numeric"
-                   :minute "numeric"}]
+         opts #js {:hour "2-digit"
+                   :minute "2-digit"}]
      (.toLocaleTimeString dt "ja-JP" opts))])
 
 (defn hand
@@ -129,33 +166,42 @@
      [hand "img/hand_m.png" md]
      [hand "img/hand_s.png" sd]]))
 
+(defn checkbox
+  [checked? caption ev]
+  [:label.check-label
+   [:input {:type "checkbox"
+            :value 1
+            :checked checked?
+            :on-change #(rf/dispatch
+                          [ev (not checked?)])}
+    ]
+   caption])
+
 (defn controls
   []
-  (let [{:keys [with-era? stop2go?]} @(rf/subscribe [:options])]
+  (let [{:keys [with-era? stop2go? background?]}
+        @(rf/subscribe [:options])]
     [:div.controls
-     [:label.check-label.with-era
-      [:input {:type "checkbox"
-               :value with-era?
-               :on-change #(rf/dispatch
-                             [:era-check-change (not with-era?)])}
-       ]
-      "和暦で表示"]
-     [:label.check-label.stop2go
-      [:input {:type "checkbox"
-               :value stop2go?
-               :on-change #(rf/dispatch
-                             [:stop2go-check-change (not stop2go?)])}
-       ]
-      "Stop2go"]]))
+     [checkbox with-era? "和暦で表示" :era-check-change]
+     [checkbox stop2go? "Stop2go" :stop2go-check-change]
+     [checkbox background? "背景画像" :bg-check-change]]))
+
+(defn display
+  []
+  (let [background? @(rf/subscribe [:background?])
+        part @(rf/subscribe [:day-part])
+        bg-image (if background? (image-url part) "none")]
+    [:div {:style {:background-image bg-image}
+                   :class (str "display " (if background? "bg" "nobg"))}
+     [#'date]
+     [#'digital-time]
+     [#'analog-time]]))
 
 (defn ui
   []
   [:div.content
    [:div.title "Web Clock in ClojureScript"]
-   [:div.display
-    [#'date]
-    [#'digital-time]
-    [#'analog-time]]
+   [#'display]
    [#'controls]
    ])
 
@@ -174,4 +220,5 @@
 (comment
   (js/alert "Hey")
   (run)
+  (rf/dispatch [:time-change (js/Date. "1995-12-17T12:24:00")])
   )
