@@ -1,4 +1,4 @@
-# ClojureScript作るWebクロック
+# ClojureScriptで作るWebクロック
 
 [日付と時刻を表示するアプリ(https://gpsoft.github.io/cloclock/)](https://gpsoft.github.io/cloclock/)。
 
