@@ -1,2 +1,0 @@
-{:main cloclock.core
- :output-to "resources/public/js/app.js"}
