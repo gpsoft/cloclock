@@ -39,7 +39,7 @@ rel:
 	git co gh-pages
 	git co master -- resources/public/
 	git rm -r --cached resources
-	cp -ru resources/public/* .
+	cp -r resources/public/* .
 	git add index.html img css js
 	git com -m "Deploy app"
 	git ll
