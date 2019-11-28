@@ -8,6 +8,7 @@ body {
 	padding: 16px;
 	color: #ffffff;
 	background-color: #336699;
+	font-family: sans-serif;
 }
 
 .content {
@@ -33,15 +34,15 @@ body {
 	padding-left: 8px;
 	font-family: serif;
 	font-weight: bold;
-	font-size: 28px;
+	font-size: 27px;
 }
 
 .digital-time-section {
 	width: 300px;
 	height: 200px;
-	font-size: 120px;
+	font-size: 108px;
 	text-align: right;
-	padding-right: 12px;
+	padding-right: 8px;
 }
 
 .display.bg .date-section,
